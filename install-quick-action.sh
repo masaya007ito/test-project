@@ -3,23 +3,17 @@
 # install-quick-action.sh - 「動画をMP3に変換」クイックアクションをインストール
 #
 # macOS の Finder 右クリックメニューに「動画をMP3に変換」を追加します。
+# 変換ロジックはワークフロー内に直接埋め込まれるため、
+# インストール後はこのリポジトリを削除しても動作します。
 #
 
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-CONVERTER_SCRIPT="$SCRIPT_DIR/video-to-mp3.sh"
 WORKFLOW_NAME="動画をMP3に変換"
 WORKFLOW_DIR="$HOME/Library/Services/${WORKFLOW_NAME}.workflow"
 
-# video-to-mp3.sh が存在するか確認
-if [ ! -f "$CONVERTER_SCRIPT" ]; then
-    echo "エラー: video-to-mp3.sh が見つかりません" >&2
-    echo "このスクリプトと同じディレクトリに video-to-mp3.sh を配置してください" >&2
-    exit 1
-fi
-
 echo "クイックアクション「${WORKFLOW_NAME}」をインストールします..."
+echo ""
 
 # Services ディレクトリを作成
 mkdir -p "$HOME/Library/Services"
@@ -33,12 +27,24 @@ fi
 # Automator ワークフローの構造を作成
 mkdir -p "$WORKFLOW_DIR/Contents"
 
-# Info.plist を作成
-cat > "$WORKFLOW_DIR/Contents/Info.plist" << 'PLIST'
+# ---- Info.plist ----
+cat > "$WORKFLOW_DIR/Contents/Info.plist" << 'PLIST_END'
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>CFBundleName</key>
+	<string>動画をMP3に変換</string>
+	<key>CFBundleIdentifier</key>
+	<string>com.user.video-to-mp3</string>
+	<key>CFBundleVersion</key>
+	<string>1.0</string>
+	<key>CFBundleShortVersionString</key>
+	<string>1.0</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundlePackageType</key>
+	<string>BNDL</string>
 	<key>NSServices</key>
 	<array>
 		<dict>
@@ -49,14 +55,24 @@ cat > "$WORKFLOW_DIR/Contents/Info.plist" << 'PLIST'
 			</dict>
 			<key>NSMessage</key>
 			<string>runWorkflowAsService</string>
+			<key>NSSendFileTypes</key>
+			<array>
+				<string>public.movie</string>
+				<string>public.video</string>
+				<string>public.mpeg-4</string>
+				<string>com.apple.quicktime-movie</string>
+				<string>public.avi</string>
+				<string>public.item</string>
+			</array>
 		</dict>
 	</array>
 </dict>
 </plist>
-PLIST
+PLIST_END
 
-# document.wflow を作成
-cat > "$WORKFLOW_DIR/Contents/document.wflow" << WFLOW
+# ---- document.wflow ----
+# 変換ロジックを直接ワークフロー内に埋め込む（外部スクリプト不要）
+cat > "$WORKFLOW_DIR/Contents/document.wflow" << 'WFLOW_END'
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -122,8 +138,48 @@ cat > "$WORKFLOW_DIR/Contents/document.wflow" << WFLOW
 				<key>ActionParameters</key>
 				<dict>
 					<key>COMMAND_STRING</key>
-					<string>export PATH="/usr/local/bin:/opt/homebrew/bin:\$PATH"
-"${CONVERTER_SCRIPT}" "\$@"</string>
+					<string>#!/bin/bash
+export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
+
+if ! command -v ffmpeg &amp;&gt;/dev/null; then
+    osascript -e 'display dialog "ffmpeg がインストールされていません。\n\nbrew install ffmpeg\n\nでインストールしてください。" with title "Video to MP3" buttons {"OK"} default button "OK" with icon stop'
+    exit 1
+fi
+
+VIDEO_EXTENSIONS="mp4|mkv|avi|mov|wmv|flv|webm|m4v|ts|mts|m2ts|3gp|ogv"
+success_count=0
+fail_count=0
+
+for input_file in "$@"; do
+    [ ! -f "$input_file" ] &amp;&amp; continue
+
+    ext="${input_file##*.}"
+    ext_lower=$(echo "$ext" | tr '[:upper:]' '[:lower:]')
+    echo "$ext_lower" | grep -qiE "^($VIDEO_EXTENSIONS)$" || continue
+
+    dir=$(dirname "$input_file")
+    name=$(basename "$input_file" ".$ext")
+    output_file="$dir/${name}.mp3"
+
+    counter=1
+    while [ -f "$output_file" ]; do
+        output_file="$dir/${name} (${counter}).mp3"
+        ((counter++))
+    done
+
+    if ffmpeg -i "$input_file" -vn -acodec libmp3lame -ab 192k -ar 44100 -y "$output_file" 2&gt;/dev/null; then
+        ((success_count++))
+    else
+        [ -f "$output_file" ] &amp;&amp; rm -f "$output_file"
+        ((fail_count++))
+    fi
+done
+
+if [ "$success_count" -gt 0 ]; then
+    osascript -e "display notification \"${success_count}個のファイルをMP3に変換しました\" with title \"Video to MP3\""
+elif [ "$fail_count" -gt 0 ]; then
+    osascript -e 'display notification "変換に失敗しました" with title "Video to MP3"'
+fi</string>
 					<key>CheckedForUserDefaultShell</key>
 					<true/>
 					<key>inputMethod</key>
@@ -148,16 +204,16 @@ cat > "$WORKFLOW_DIR/Contents/document.wflow" << WFLOW
 				<key>Class Name</key>
 				<string>RunShellScriptAction</string>
 				<key>InputUUID</key>
-				<string>A0A0A0A0-B1B1-C2C2-D3D3-E4E4E4E4E4E4</string>
+				<string>820817C1-854B-4BF7-93C6-D738A3D5D3E0</string>
 				<key>Keywords</key>
 				<array>
 					<string>Shell</string>
 					<string>Script</string>
 				</array>
 				<key>OutputUUID</key>
-				<string>F5F5F5F5-A6A6-B7B7-C8C8-D9D9D9D9D9D9</string>
+				<string>F3B614D2-7A5C-4E8E-B1D9-2C6F4A8E9B01</string>
 				<key>UUID</key>
-				<string>11111111-2222-3333-4444-555555555555</string>
+				<string>A7C9E3B1-4D2F-8A6E-C5B0-1F3D7E9A2B4C</string>
 				<key>UnlocalizedApplications</key>
 				<array>
 					<string>Automator</string>
@@ -270,21 +326,34 @@ cat > "$WORKFLOW_DIR/Contents/document.wflow" << WFLOW
 	</dict>
 </dict>
 </plist>
-WFLOW
+WFLOW_END
 
+echo "ワークフローを配置しました: $WORKFLOW_DIR"
 echo ""
-echo "インストール完了!"
+
+# サービスキャッシュを更新して Finder に認識させる
+echo "サービスキャッシュを更新中..."
+/System/Library/CoreServices/pbs -update 2>/dev/null || true
+killall Finder 2>/dev/null || true
+
+sleep 1
 echo ""
-echo "場所: $WORKFLOW_DIR"
+echo "============================="
+echo " インストール完了!"
+echo "============================="
 echo ""
 echo "使い方:"
 echo "  1. Finder で動画ファイルを右クリック"
-echo "  2. 「クイックアクション」>「${WORKFLOW_NAME}」を選択"
+echo "  2.「クイックアクション」>「${WORKFLOW_NAME}」を選択"
 echo "  3. 同じフォルダに MP3 ファイルが生成されます"
 echo ""
 echo "※ 複数ファイルを選択して一括変換も可能です"
 echo "※ ffmpeg が必要です（brew install ffmpeg）"
 echo ""
-echo "メニューに表示されない場合:"
-echo "  システム設定 > プライバシーとセキュリティ > 機能拡張 > Finder"
-echo "  で「${WORKFLOW_NAME}」にチェックが入っているか確認してください"
+echo "表示されない場合:"
+echo "  1. システム設定 > プライバシーとセキュリティ > 機能拡張 > Finder"
+echo "     で「${WORKFLOW_NAME}」が有効になっているか確認"
+echo "  2. 一度ログアウト→ログインすると反映されることがあります"
+echo ""
+echo "アンインストール:"
+echo "  rm -rf \"$WORKFLOW_DIR\""
