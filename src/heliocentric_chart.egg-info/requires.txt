@@ -1,4 +1,0 @@
-pyswisseph>=2.10.0
-
-[dev]
-pytest>=7.0
