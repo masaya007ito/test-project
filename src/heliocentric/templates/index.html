@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Heliocentric Astrology Chart</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #1a1a2e;
+      color: #e0e0e0;
+      min-height: 100vh;
+    }
+    header {
+      text-align: center;
+      padding: 2rem 1rem 1rem;
+    }
+    header h1 {
+      font-size: 1.8rem;
+      color: #FFD700;
+      letter-spacing: 0.05em;
+    }
+    header p { color: #888; margin-top: 0.3rem; }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 1rem 2rem;
+    }
+    form {
+      display: flex;
+      gap: 0.8rem;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
+      margin: 1.5rem 0;
+    }
+    label { font-size: 0.95rem; color: #aaa; }
+    input[type="datetime-local"] {
+      padding: 0.5rem 0.8rem;
+      border: 1px solid #444;
+      border-radius: 6px;
+      background: #16213e;
+      color: #e0e0e0;
+      font-size: 1rem;
+    }
+    button {
+      padding: 0.5rem 1.5rem;
+      border: none;
+      border-radius: 6px;
+      background: #FFD700;
+      color: #1a1a2e;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    button:hover { background: #ffec5e; }
+    .error {
+      text-align: center;
+      color: #ff6b6b;
+      margin: 1rem 0;
+    }
+    .chart-area {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2rem;
+    }
+    .chart-area svg {
+      max-width: 100%;
+      height: auto;
+      border-radius: 12px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+    }
+    .positions-table {
+      width: 100%;
+      max-width: 500px;
+      border-collapse: collapse;
+    }
+    .positions-table th {
+      text-align: left;
+      padding: 0.4rem 0.8rem;
+      border-bottom: 1px solid #444;
+      color: #FFD700;
+      font-size: 0.85rem;
+    }
+    .positions-table td {
+      padding: 0.35rem 0.8rem;
+      border-bottom: 1px solid #2a2a4a;
+      font-size: 0.95rem;
+    }
+    .aspects-table {
+      width: 100%;
+      max-width: 600px;
+      border-collapse: collapse;
+    }
+    .aspects-table th {
+      text-align: left;
+      padding: 0.4rem 0.8rem;
+      border-bottom: 1px solid #444;
+      color: #FFD700;
+      font-size: 0.85rem;
+    }
+    .aspects-table td {
+      padding: 0.3rem 0.8rem;
+      border-bottom: 1px solid #2a2a4a;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>&#x2609; Heliocentric Chart</h1>
+    <p>Sun-centered astrology chart generator</p>
+  </header>
+
+  <div class="container">
+    <form method="post">
+      <label for="datetime">Date &amp; Time (UTC):</label>
+      <input type="datetime-local" id="datetime" name="datetime" value="{{ dt_str }}">
+      <button type="submit">Generate</button>
+    </form>
+
+    {% if error %}
+      <p class="error">{{ error }}</p>
+    {% endif %}
+
+    {% if svg_content %}
+      <div class="chart-area">
+        {{ svg_content | safe }}
+
+        <table class="positions-table">
+          <thead>
+            <tr><th>Planet</th><th>Position</th><th>Sign</th></tr>
+          </thead>
+          <tbody>
+            {% for pos in chart.positions %}
+            <tr>
+              <td>{{ pos.name }}</td>
+              <td>{{ pos.degree_display }}</td>
+              <td>{{ pos.sign_symbol }} {{ pos.sign }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+
+        <table class="aspects-table">
+          <thead>
+            <tr><th colspan="4">Aspects ({{ chart.aspects | length }})</th></tr>
+            <tr><th>Planet 1</th><th>Aspect</th><th>Planet 2</th><th>Orb</th></tr>
+          </thead>
+          <tbody>
+            {% for asp in chart.aspects %}
+            <tr>
+              <td>{{ asp.planet1 }}</td>
+              <td>{{ asp.symbol }} {{ asp.aspect_type }}</td>
+              <td>{{ asp.planet2 }}</td>
+              <td>{{ "%+.1f" | format(asp.orb) }}&deg;</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% endif %}
+  </div>
+</body>
+</html>

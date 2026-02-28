@@ -9,6 +9,7 @@ description = "Heliocentric astrology chart generator"
 requires-python = ">=3.9"
 dependencies = [
     "pyswisseph>=2.10.0",
+    "flask>=2.3.0",
 ]
 
 [project.optional-dependencies]
@@ -18,6 +19,7 @@ dev = [
 
 [project.scripts]
 heliochart = "heliocentric.cli:main"
+heliochart-web = "heliocentric.web:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
