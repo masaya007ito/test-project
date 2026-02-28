@@ -1,0 +1,8 @@
+Metadata-Version: 2.4
+Name: heliocentric-chart
+Version: 1.0.0
+Summary: Heliocentric astrology chart generator
+Requires-Python: >=3.9
+Requires-Dist: pyswisseph>=2.10.0
+Provides-Extra: dev
+Requires-Dist: pytest>=7.0; extra == "dev"
