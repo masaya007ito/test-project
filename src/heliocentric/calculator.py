@@ -4,6 +4,8 @@ Uses Swiss Ephemeris (pyswisseph) to compute heliocentric longitudes
 for all planets as viewed from the Sun.
 """
 
+from __future__ import annotations
+
 from dataclasses import dataclass
 from datetime import datetime
 

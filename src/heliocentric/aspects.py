@@ -1,5 +1,7 @@
 """Aspect calculations between planets in a heliocentric chart."""
 
+from __future__ import annotations
+
 from dataclasses import dataclass
 
 from heliocentric.calculator import PlanetPosition

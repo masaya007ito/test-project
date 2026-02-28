@@ -6,6 +6,8 @@ Generates a circular chart with:
 - Aspect lines connecting planets
 """
 
+from __future__ import annotations
+
 import math
 from xml.etree.ElementTree import Element, SubElement, tostring
 

@@ -1,5 +1,7 @@
 """Heliocentric chart model combining positions and aspects."""
 
+from __future__ import annotations
+
 from dataclasses import dataclass, field
 from datetime import datetime
 

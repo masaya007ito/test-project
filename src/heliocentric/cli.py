@@ -1,5 +1,7 @@
 """Command-line interface for heliocentric chart generation."""
 
+from __future__ import annotations
+
 import argparse
 import sys
 from datetime import datetime, timezone
