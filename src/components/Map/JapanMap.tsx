@@ -9,8 +9,7 @@ import { useVisitData } from '../../contexts/VisitDataContext';
 import { STATUS_COLORS, STATUS_HOVER_COLORS } from '../../constants/colors';
 import { PREFECTURE_NAMES } from '../../constants/prefectures';
 import { VisitStatus, VISIT_STATUS_LABELS } from '../../types';
-
-const JAPAN_TOPOJSON = '/geojson/japan.topojson';
+import japanTopo from '../../../public/geojson/japan.topojson';
 
 const JapanMap = memo(function JapanMap() {
   const { visitData, cycleStatus, drillDown, selectLocation } = useVisitData();
@@ -38,7 +37,7 @@ const JapanMap = memo(function JapanMap() {
         style={{ width: '100%', height: '100%' }}
       >
         <ZoomableGroup>
-          <Geographies geography={JAPAN_TOPOJSON}>
+          <Geographies geography={japanTopo as string | Record<string, unknown>}>
             {({ geographies }) =>
               geographies.map((geo) => {
                 const code = getPrefCode(geo);

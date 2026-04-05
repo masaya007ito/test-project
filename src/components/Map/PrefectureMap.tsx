@@ -1,4 +1,4 @@
-import { memo, useState, useEffect } from 'react';
+import { memo, useState, useEffect, useCallback } from 'react';
 import {
   ComposableMap,
   Geographies,
@@ -29,7 +29,7 @@ interface MunicipalityGeo {
 
 const PrefectureMap = memo(function PrefectureMap({ prefectureCode }: PrefectureMapProps) {
   const { visitData, cycleStatus, selectLocation, goBack } = useVisitData();
-  const [geoUrl, setGeoUrl] = useState<string | null>(null);
+  const [geoData, setGeoData] = useState<unknown>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [tooltipContent, setTooltipContent] = useState('');
@@ -37,19 +37,28 @@ const PrefectureMap = memo(function PrefectureMap({ prefectureCode }: Prefecture
 
   const prefName = PREFECTURE_NAMES[prefectureCode] || '';
 
-  useEffect(() => {
-    const url = `/geojson/municipalities/${prefectureCode}.topojson`;
-    fetch(url)
-      .then((res) => {
-        if (!res.ok) throw new Error('Not found');
-        setGeoUrl(url);
-        setLoading(false);
-      })
-      .catch(() => {
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    setGeoData(null);
+    try {
+      const modules = import.meta.glob('../../../public/geojson/municipalities/*.topojson');
+      const key = `../../../public/geojson/municipalities/${prefectureCode}.topojson`;
+      if (modules[key]) {
+        const mod = await modules[key]() as { default: unknown };
+        setGeoData(mod.default);
+      } else {
         setError(`${prefName}の市区町村データがありません`);
-        setLoading(false);
-      });
+      }
+    } catch {
+      setError(`${prefName}の市区町村データの読み込みに失敗しました`);
+    }
+    setLoading(false);
   }, [prefectureCode, prefName]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const getMuniCode = (geo: MunicipalityGeo): string => {
     return (
@@ -119,7 +128,7 @@ const PrefectureMap = memo(function PrefectureMap({ prefectureCode }: Prefecture
           </p>
         </div>
       )}
-      {geoUrl && (
+      {geoData != null && (
         <ComposableMap
           projection="geoMercator"
           projectionConfig={{
@@ -131,7 +140,7 @@ const PrefectureMap = memo(function PrefectureMap({ prefectureCode }: Prefecture
           style={{ width: '100%', height: '100%' }}
         >
           <ZoomableGroup>
-            <Geographies geography={geoUrl}>
+            <Geographies geography={geoData as string | Record<string, unknown>}>
               {({ geographies }) =>
                 geographies.map((geo) => {
                   const code = getMuniCode(geo);
