@@ -23,11 +23,9 @@ export default defineConfig({
     stringify: true,
   },
   build: {
+    outDir: 'dist-world',
     rollupOptions: {
-      input: {
-        main: 'index.html',
-        world: 'world.html',
-      },
+      input: 'world.html',
     },
   },
 });
