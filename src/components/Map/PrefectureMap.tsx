@@ -1,4 +1,4 @@
-import { memo, useState, useEffect, useCallback } from 'react';
+import { memo, useState, useEffect } from 'react';
 import {
   ComposableMap,
   Geographies,
@@ -37,28 +37,24 @@ const PrefectureMap = memo(function PrefectureMap({ prefectureCode }: Prefecture
 
   const prefName = PREFECTURE_NAMES[prefectureCode] || '';
 
-  const loadData = useCallback(async () => {
+  useEffect(() => {
     setLoading(true);
     setError(null);
     setGeoData(null);
-    try {
-      const modules = import.meta.glob('../../../public/geojson/municipalities/*.topojson');
-      const key = `../../../public/geojson/municipalities/${prefectureCode}.topojson`;
-      if (modules[key]) {
-        const mod = await modules[key]() as { default: unknown };
-        setGeoData(mod.default);
-      } else {
-        setError(`${prefName}の市区町村データがありません`);
-      }
-    } catch {
-      setError(`${prefName}の市区町村データの読み込みに失敗しました`);
-    }
-    setLoading(false);
+    fetch(`./geojson/municipalities/${prefectureCode}.topojson`)
+      .then((res) => {
+        if (!res.ok) throw new Error('Not found');
+        return res.json();
+      })
+      .then((data) => {
+        setGeoData(data);
+        setLoading(false);
+      })
+      .catch(() => {
+        setError(`${prefName}の市区町村データを読み込めませんでした。\nHTTPサーバー経由でアクセスしてください。`);
+        setLoading(false);
+      });
   }, [prefectureCode, prefName]);
-
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
 
   const getMuniCode = (geo: MunicipalityGeo): string => {
     return (

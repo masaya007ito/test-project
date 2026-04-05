@@ -17,7 +17,8 @@
     "@types/topojson-specification": "^1.0.5",
     "@vitejs/plugin-react": "^6.0.1",
     "typescript": "~5.9.3",
-    "vite": "^8.0.1"
+    "vite": "^8.0.1",
+    "vite-plugin-singlefile": "^2.3.2"
   },
   "dependencies": {
     "dayjs": "^1.11.20",
