@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stickers</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1>Sticker Collection</h1>
+        <p>Click a sticker to place it on the canvas. Drag to reposition.</p>
+    </header>
+
+    <div id="sticker-palette">
+        <button class="sticker-btn" data-sticker="⭐">⭐</button>
+        <button class="sticker-btn" data-sticker="❤️">❤️</button>
+        <button class="sticker-btn" data-sticker="🔥">🔥</button>
+        <button class="sticker-btn" data-sticker="🎉">🎉</button>
+        <button class="sticker-btn" data-sticker="🌈">🌈</button>
+        <button class="sticker-btn" data-sticker="🦄">🦄</button>
+        <button class="sticker-btn" data-sticker="🍕">🍕</button>
+        <button class="sticker-btn" data-sticker="🚀">🚀</button>
+        <button class="sticker-btn" data-sticker="🎵">🎵</button>
+        <button class="sticker-btn" data-sticker="💎">💎</button>
+        <button class="sticker-btn" data-sticker="🌸">🌸</button>
+        <button class="sticker-btn" data-sticker="🐱">🐱</button>
+    </div>
+
+    <div id="canvas"></div>
+
+    <div id="controls">
+        <button id="clear-btn">Clear Canvas</button>
+        <label>
+            Size:
+            <input type="range" id="size-slider" min="24" max="120" value="48">
+            <span id="size-label">48px</span>
+        </label>
+    </div>
+
+    <script src="stickers.js"></script>
+</body>
+</html>
